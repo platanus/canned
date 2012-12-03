@@ -107,7 +107,7 @@ module Canned
       # @param [Block] _block generator block, will be called to generate the resource if needed.
       #
       def load_resource(_name, _options={}, &_block)
-        self._cn_resources ||= ActiveSupport::HashWithIndifferentAccess.new
+        self._cn_resources ||= []
         self._cn_resources << {
           name: _name,
           only: unless _options[:only].nil? then Array(_options[:only]) else nil end,
