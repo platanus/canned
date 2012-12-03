@@ -9,7 +9,7 @@ Gem::Specification.new do |gem|
   gem.authors       = ["Ignacio Baixas"]
   gem.email         = ["iobaixas@platan.us"]
   gem.description   = %q{Profile based authorization for ruby on rails}
-  gem.summary       = %q{TODO: Write a gem summary}
+  # gem.summary       = %q{TODO: Write a gem summary}
   gem.homepage      = "http://www.platan.us"
 
   gem.files         = `git ls-files`.split($/)
