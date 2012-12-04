@@ -26,6 +26,11 @@ module Canned
         attr_accessor :_cn_excluded
         attr_accessor :_cn_resources
       end
+
+      # actors are shared between subclasses
+      klass.cattr_accessor :_cn_actors
+      klass._cn_actors = ActiveSupport::HashWithIndifferentAccess.new
+
       klass.extend ClassMethods
     end
 
@@ -67,10 +72,6 @@ module Canned
       return true if self.class._cn_excluded.nil?
       return false if self.class._cn_excluded == :all
       return !(self.class._cn_excluded.include? action_name.to_sym)
-    end
-
-    def is_loaded?(_name)
-
     end
 
     module ClassMethods
@@ -122,7 +123,6 @@ module Canned
       # @param [Block] _block generator block, used instead of generator method if given.
       #
       def register_actor(_name, _options={}, &_block)
-        self._cn_actors ||= ActiveSupport::HashWithIndifferentAccess.new
         self._cn_actors[_options.fetch(:as, _name)] = _block || _name
       end
 

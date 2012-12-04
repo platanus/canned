@@ -60,6 +60,17 @@ describe Canned::ControllerExt do
       end
       it { proxy.resources.has_key?(:resource).should be_false }
     end
+
+    context 'when registering actor in a super class' do
+      let(:proxy) do
+        controller_class.register_actor(:actor) { HashObj.new(id: 10) }
+        sub_class = Class.new controller_class
+        other_controller = sub_class.new
+        other_controller.stub(:action_name) { 'action' }
+        other_controller.perform_resource_loading
+      end
+      it { proxy.actors.has_key?(:actor).should be_true }
+    end
   end
 
   describe ".perform_access_authorization" do
