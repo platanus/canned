@@ -176,7 +176,7 @@ module Canned
         end
 
         def has_key?(_key)
-          @actor_loaders.has_key? _key.to_sym
+          @loaders.has_key? _key.to_sym
         end
       end
     end
