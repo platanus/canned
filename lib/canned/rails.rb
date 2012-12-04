@@ -50,14 +50,14 @@ module Canned
 
           # call initializer block and extract profiles
           profiles = Array(if _method.nil? then instance_eval(&_block) else send(_method) end)
-          raise AuthError.new 'No profiles avaliable' if profiles.empty?
+          raise Canned::AuthError.new 'No profiles avaliable' if profiles.empty?
 
           # preload resources
           proxy = ControllerProxy.new self
           proxy.preload_resources_for action_name
 
           # load test context and execute profile validation
-          ctx = TestContext.new proxy
+          ctx = Canned::TestContext.new proxy
           result = Array(profiles).collect do |profile|
             test_a = _def.validate ctx, profile, controller_name
             raise ForbiddenError if test_a == :forbidden
@@ -65,7 +65,7 @@ module Canned
             raise ForbiddenError if test_b == :forbidden
             test_a == :allowed or test_b == :allowed
           end
-          raise AuthError unless result.any?
+          raise Canned::AuthError unless result.any?
         end
       end
 
@@ -170,7 +170,7 @@ module Canned
           return @actor_cache[_key] if @actor_cache.has_key? _key
 
           loader = @loaders[_key]
-          raise SetupError.new "Invalid actor loader value" if loader.nil?
+          raise Canned::SetupError.new "Invalid actor loader value" if loader.nil?
           actor = if loader.is_a? String then @controller.send(loader) else @controller.instance_eval(&loader) end
           @actor_cache[_name] = actor
         end
