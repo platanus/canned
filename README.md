@@ -23,12 +23,11 @@ TODO: Write usage instructions here
 ## TODO
 
 	* TODO Section
-	* Rails specs
-	* Attribute accessibility
+	* Attribute accessibility helpers
 
 ## Credits
 
-TODO
+	* Some ideas about resource managing and general gem structure where taken from [canned](http://github.com/ryanb/cancan).
 
 ## Contributing
 

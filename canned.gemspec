@@ -9,13 +9,11 @@ Gem::Specification.new do |gem|
   gem.authors       = ["Ignacio Baixas"]
   gem.email         = ["iobaixas@platan.us"]
   gem.description   = %q{Profile based authorization for ruby on rails}
-  # gem.summary       = %q{TODO: Write a gem summary}
+  gem.summary       = %q{Profile based authorization for ruby on rails, provides a simple DSL for specifying controller access restrictions, also considers resource loading and attribute accesibility}
   gem.homepage      = "http://www.platan.us"
 
-  gem.files         = `git ls-files`.split($/)
-  gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
-  gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
-  gem.require_paths = ["lib"]
+  gem.files         = Dir["{lib,spec}/**/*", "[A-Z]*", "init.rb"] - ["Gemfile.lock"]
+  gem.require_path  = "lib"
 
   gem.add_dependency "rails", "~> 3.2.2"
   gem.add_development_dependency "rspec"
