@@ -1,11 +1,33 @@
 module Canned
-  ## Upon block context.
-  # allows '' do
-  #   upon(:user_data) { matches(:site_id, using: :equals_int) or matches(:section_id) and passes(:is_owner) }
-  #   upon { matches('current_user.site_id', with: :site_id) or matches(:section_id) }
-  #   upon(:user) { matches(:site_id) or matches(:section_id) and passes(:test) or holds('user.is_active?') }
-  #   upon { holds('@raffle.id == current_user.id') }
-  # end
+
+  ## The test context
+  #
+  # The test context provides all operations avaliable inside **upon** blocks, including access
+  # to loaded resources and controller.
+  #
+  # It also mantains an "actor stack", this allows the context to provide upon blocks inside upon blocks
+  # where different actors can be queried in its own context.
+  #
+  # Some examples of usage inside upon blocks:
+  #
+  #     # Matching an actor property with a request param:
+  #     allow upon(:user) { asks_for_same(:role_name) }
+  #     # ... short hand for...
+  #     allow upon(:user) { asks_for(:role_name, equal_to: role_name) }
+  #
+  #     # Matching an actor property with a request param if param is an id:
+  #     allow upon(:user) { asks_for_same_id(:app_id) }
+  #
+  #     # Matching actions
+  #     allow upon(:user) { needs_to(:create, :update) }
+  #
+  #     # Testing a relation between actor and a preloaded resource
+  #     allow upon(:user) { belongs_to(:account) }
+  #
+  #     # Mixing everything
+  #     # - Will only allow user if searches by name and belongs to requested account and is an admin
+  #     allow upon(:user) { asks_for(:search, equal_to: 'by_name') and belongs_to(:account) and is_admin? }
+  #
   class TestContext
 
     def initialize(_provider)
@@ -18,27 +40,23 @@ module Canned
       actor
     end
 
+    ## Gets the context actor
     def actor
       raise SetupError.new "Must provide an actor usign upon(<actor_name>)" if @_actor_stack.empty?
       @_actor_stack.last
     end
 
-    ## Gets the
+    ## Gets the context controller (provider)
     def controller
       @_provider
     end
 
-    ## Resolve missing calls first by seeking resoures and then sending them to the underlying actor
-    def method_missing(_method, *_args, &_block)
-      return @_provider.resources[_method] if _args.count == 0 and _block.nil? and @_provider.resources.has_key? _method
-      return @_actor_stack.last.send(_method, *_args, &_block) unless @_actor_stack.empty?
-      super
-    end
-
+    ## Changes the actor context for the upcoming block
     def upon(_name=nil, &_block)
       upon_with_ctx(_name, self, &_block)
     end
 
+    ## Same as upon but allows specifying the context
     def upon_with_ctx(_name, _ctx, &_block)
       if _name.nil?
         return _ctx.instance_eval &_block
@@ -51,12 +69,12 @@ module Canned
       end
     end
 
-    ##
-    def calls(*_actions)
+    ## Tests if the request action name is between **_actions**
+    def needs_to(*_actions)
       _actions.any? { |a| a.to_s == @_provider.action_name }
     end
 
-    ## Test whether
+    ## Tests if a given param is **equal_to** or **equal_to_id** or **greater_than** or **less_than** a given value.
     def asks_for(_param, _opt={})
       return false unless @_provider.params.has_key? _param
       value = @_provider.params[_param]
@@ -83,16 +101,19 @@ module Canned
       return true
     end
 
+    ## Tests if a set of request param values are the same as corresponding actor's properties
     def asks_for_same(*_params)
       # TODO: support hash actor
       _params.all? { |p| asks_for(p, equal_to: actor.send(p)) }
     end
 
+    ## Tests if a set of request param values are the same as corresponding actor's properties, does a integer comparison
     def asks_for_same_id(*_params)
       # TODO: support hash actor
       _params.all? { |p| asks_for(p, equal_to_id: actor.send(p)) }
     end
 
+    ## Test if current actor belongs to **_model**
     def belongs_to(_model, _options={})
       as = _options[:as]
       as = _model.class.name.parameterize if as.nil?
@@ -108,6 +129,7 @@ module Canned
       end
     end
 
+    ## Test if **_model** belongs to current actor
     def has(_model, _options={})
       as = _options[:as]
       as = actor.class.name.parameterize if as.nil?
@@ -121,6 +143,13 @@ module Canned
       else
         _model.send("#{as}_id") == actor.send(:id)
       end
+    end
+
+    ## Resolve missing calls first by seeking resoures and then sending them to the underlying actor
+    def method_missing(_method, *_args, &_block)
+      return @_provider.resources[_method] if _args.count == 0 and _block.nil? and @_provider.resources.has_key? _method
+      return @_actor_stack.last.send(_method, *_args, &_block) unless @_actor_stack.empty?
+      super
     end
   end
 end

@@ -77,6 +77,8 @@ module Canned
 
       def validate(_ctx, _action)
 
+        # TODO: optimize, do not process allow rules if already allowed.
+
         _ctx.upon_with_ctx(@actor, self) do
           @rules.each do |rule|
             case rule[:type]

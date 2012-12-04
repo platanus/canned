@@ -2,18 +2,18 @@ module Canned
 
   ## Action Controller extension
   #
-  # Include this in the the base application controller and use the canned_setup method to seal it.
+  # Include this in the the base application controller and use the acts_as_restricted method to seal it.
   #
   #   ApplicationController << ActionController:Base
   #     include Canned:ControllerExt
   #
   #     # Call canned setup method passing the desired profile definition object
-  #     can_with Profiles do
+  #     acts_as_restricted Profiles do
   #
   #       # Put authentication code here...
   #
   #       # Return profiles you wish to validate
-  #       return [:profile_1, :profile_2]
+  #       [:profile_1, :profile_2]
   #     end
   #
   #   end
@@ -29,6 +29,50 @@ module Canned
       klass.extend ClassMethods
     end
 
+    ## Performs access authorization for current action
+    #
+    # @param [Definition] _definition Profile definition
+    # @param [Array<String>] _profiles Profiles to validate
+    # @returns [Boolean] True if action access is authorized
+    #
+    def perform_access_authorization(_definition, _profiles)
+      # preload resources, retrieve resource proxy
+      proxy = perform_resource_loading
+
+      # load test context and execute profile validation
+      ctx = Canned::TestContext.new proxy
+      result = _profiles.collect do |profile|
+        test_a = _definition.validate ctx, profile, controller_name
+        return false if test_a == :forbidden
+        test_b = _definition.validate ctx, profile, "#{controller_name}##{action_name}" # TODO: keep this?
+        return false if test_b == :forbidden
+        test_a == :allowed or test_b == :allowed
+      end
+      return result.any?
+    end
+
+    ## Performs resource loading for current action
+    #
+    # @returns [ControllerProxy] used for resource loading
+    #
+    def perform_resource_loading
+      proxy = ControllerProxy.new self
+      proxy.preload_resources_for action_name
+      return proxy
+    end
+
+    ## Returns true if the current action is protected.
+    #
+    def is_restricted?
+      return true if self.class._cn_excluded.nil?
+      return false if self.class._cn_excluded == :all
+      return !(self.class._cn_excluded.include? action_name.to_sym)
+    end
+
+    def is_loaded?(_name)
+
+    end
+
     module ClassMethods
 
       ## Setups the controller user profile definitions and profile provider block (or proc)
@@ -36,41 +80,28 @@ module Canned
       # The passed method or block must return a list of profiles to be validated
       # by the definition.
       #
-      # @param [Definition] _def Profile definition
+      # TODO: default definition (canned config)
+      #
+      # @param [Definition] _definition Profile definition
       # @param [Symbol] _method Profile provider method name
       # @param [Block] _block Profile provider block
       #
-      def can_with(_def, _method=nil, &_block)
+      def acts_as_restricted(_definition, _method=nil, &_block)
         self.before_filter do
-          klass = self.class
-
-          # no auth if action is excluded
-          next if klass._cn_excluded == :all
-          next if !klass._cn_excluded.nil? and klass._cn_excluded.include? action_name.to_sym
-
-          # call initializer block and extract profiles
-          profiles = Array(if _method.nil? then instance_eval(&_block) else send(_method) end)
-          raise Canned::AuthError.new 'No profiles avaliable' if profiles.empty?
-
-          # preload resources
-          proxy = ControllerProxy.new self
-          proxy.preload_resources_for action_name
-
-          # load test context and execute profile validation
-          ctx = Canned::TestContext.new proxy
-          result = Array(profiles).collect do |profile|
-            test_a = _def.validate ctx, profile, controller_name
-            raise ForbiddenError if test_a == :forbidden
-            test_b = _def.validate ctx, profile, "#{controller_name}##{action_name}" # TODO: keep this?
-            raise ForbiddenError if test_b == :forbidden
-            test_a == :allowed or test_b == :allowed
-          end
-          raise Canned::AuthError unless result.any?
+          if is_restricted?
+            profiles = Array(if _method.nil? then instance_eval(&_block) else send(_method) end)
+            raise Canned::AuthError.new 'No profiles avaliable' if profiles.empty?
+            case perform_access_authorization(_definition, profiles)
+            when :forbidden; raise Canned::ForbiddenError.new
+            when :break; raise Canned::AuthError.new
+            when :default; raise Canned::AuthError.new
+            end
+          else perform_resource_loading end
         end
       end
 
       ## Removes protection for all controller actions.
-      def uncan_all
+      def unrestricted_all
         self._cn_excluded = :all
       end
 
@@ -78,9 +109,9 @@ module Canned
       #
       # @param [splat] _excluded List of actions to be excluded.
       #
-      def uncanned(*_excluded)
+      def unrestricted(*_excluded)
         self._cn_excluded ||= []
-        self._cn_excluded.push(*_excluded)
+        self._cn_excluded.push(*(_excluded.collect &:to_sym))
       end
 
       ## Registers a canned actor
@@ -95,7 +126,7 @@ module Canned
         self._cn_actors[_options.fetch(:as, _name)] = _block || _name
       end
 
-      ## Loads a resource
+      ## Registers a canned resource
       #
       # @param [String] _name Resource name
       # @param [String] _options Options:
@@ -106,7 +137,7 @@ module Canned
       #     * as: TODO: load_resource :raffle, from: :site, as: :draws
       # @param [Block] _block generator block, will be called to generate the resource if needed.
       #
-      def load_resource(_name, _options={}, &_block)
+      def register_resource(_name, _options={}, &_block)
         self._cn_resources ||= []
         self._cn_resources << {
           name: _name,
@@ -116,7 +147,7 @@ module Canned
         }
       end
 
-      def load_all_resources
+      def register_default_resources
         # TODO: Load resources using convention and controller names.
       end
     end
@@ -172,7 +203,7 @@ module Canned
           loader = @loaders[_key]
           raise Canned::SetupError.new "Invalid actor loader value" if loader.nil?
           actor = if loader.is_a? String then @controller.send(loader) else @controller.instance_eval(&loader) end
-          @actor_cache[_name] = actor
+          @actor_cache[_key] = actor
         end
 
         def has_key?(_key)
