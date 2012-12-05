@@ -145,7 +145,7 @@ module Canned
           except: Array(_options[:except]),
           loader: _block || Proc.new do
             key = _options.fetch(:using, :id)
-            if params.has_key? key then eval(_name.to_s.camelize).find params[_key]
+            if params.has_key? key then eval(_name.to_s.camelize).find params[key]
             else nil end
           end
         }
