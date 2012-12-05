@@ -143,7 +143,11 @@ module Canned
           name: _name,
           only: unless _options[:only].nil? then Array(_options[:only]) else nil end,
           except: Array(_options[:except]),
-          loader: _block || Proc.new { eval(_name.to_s.camelize).find params[_options.fetch(:using, :id)] }
+          loader: _block || Proc.new do
+            key = _options.fetch(:using, :id)
+            if params.has_key? key then eval(_name.to_s.camelize).find params[_key]
+            else nil end
+          end
         }
       end
 

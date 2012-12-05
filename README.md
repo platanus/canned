@@ -23,11 +23,12 @@ TODO: Write usage instructions here
 ## TODO
 
 	* TODO Section
+	* database backed profiles (maybe thats another gem...)
 	* Attribute accessibility helpers
 
 ## Credits
 
-	* Some ideas about resource managing and general gem structure where taken from [canned](http://github.com/ryanb/cancan).
+Some ideas about resource managing and general gem structure where taken from [canned](http://github.com/ryanb/cancan).
 
 ## Contributing
 
