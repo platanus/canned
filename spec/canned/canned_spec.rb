@@ -2,42 +2,44 @@ require 'spec_helper'
 
 describe Canned do
 
-  ## Dummy context used for the tests
-  class DummyCtx
-
-    attr_reader :actors
-    attr_reader :resources
-    attr_reader :params
-
-    def initialize(_actors, _resources, _params)
-      @actors = _actors
-      @resources = _resources
-      @params = _params
-    end
-  end
-
   describe "TestProfiles.validate" do
 
-    context 'when using profile with global actor' do
+    context 'when using profile with a context' do
 
       let(:definition) do
         class TestProfiles
           include Canned::Definition
 
-          profile :profile, upon: :user do
-            allow 'rute1#action1', upon { asks_for_same_id(:app_id) }
+          profile :profile do
+            context { the(:user) }
+            allow 'rute1', upon { asks_with_same_id(:app_id) }
+            allow 'rute2', upon { asks_for(:test) }
+            forbid 'rute3', upon { not is(:is_admin) }
           end
         end
         TestProfiles
       end
 
-      context 'and an allowed context' do
+      context 'and a matching context' do
         let(:context) do
-          Canned::TestContext.new DummyCtx.new({ user: dummy(app_id: 10) }, {}, { app_id: "10" })
+          dummy(
+            action_name: 'test',
+            actors: { user: dummy(app_id: 10, is_admin: false) },
+            resources: {},
+            params: { app_id: "10" }
+          )
         end
 
         it "is allowed if asks for same id" do
-          definition.validate(context, :profile, 'rute1#action1').should == :allowed
+          definition.validate(context, :profile, 'rute1').should == :allowed
+        end
+
+        it "is allowed if asks for same action" do
+          definition.validate(context, :profile, 'rute2').should == :allowed
+        end
+
+        it "is forbidden if 'is' expression returns true" do
+          definition.validate(context, :profile, 'rute3').should == :forbidden
         end
       end
     end
@@ -48,10 +50,10 @@ describe Canned do
         class TestProfiles
           include Canned::Definition
 
-          profile :profile, upon: :user do
-            allow 'action1', upon(:user) { asks_for_same_id(:app_id) }
-            allow 'action2', upon(:user) { belongs_to(app, as: :app) }
-            allow 'action3', upon(:user) { asks_for_same(:app_id) }
+          profile :profile do
+            allow 'action1', upon(:user) { asks_with_same_id(:app_id) }
+            allow 'action2', upon(:user) { belongs_to(:app, as: :app) }
+            allow 'action3', upon(:user) { asks_with_same(:app_id) }
           end
         end
         TestProfiles
@@ -59,7 +61,12 @@ describe Canned do
 
       context 'and an allowed context with actor and resource' do
         let(:context) do
-          Canned::TestContext.new DummyCtx.new({ user: dummy(app_id: 10, is_admin: true) }, { app: dummy(id: 10) }, { app_id: "10" })
+          dummy(
+            action_name: 'test',
+            actors: { user: dummy(app_id: 10, is_admin: true) },
+            resources: { app: dummy(id: 10) },
+            params: { app_id: "10" }
+          )
         end
 
         it "is allowed if calls asks_for_same_id" do
@@ -77,7 +84,12 @@ describe Canned do
 
       context 'and does not ask for same id' do
         let(:context) do
-          Canned::TestContext.new DummyCtx.new({ user: dummy(app_id: 10, is_admin: true) }, {}, { app_id: "11" })
+          dummy(
+            action_name: 'test',
+            actors: { user: dummy(app_id: 10, is_admin: true) },
+            resources: {},
+            params: { app_id: "11" }
+          )
         end
 
         it "is not allowed" do
@@ -87,7 +99,12 @@ describe Canned do
 
       context 'and does not belong to resource' do
         let(:context) do
-          Canned::TestContext.new DummyCtx.new({ user: dummy(app_id: 10, is_admin: true) }, { app: dummy(id: 11) }, {})
+          dummy(
+            action_name: 'test',
+            actors: { user: dummy(app_id: 10, is_admin: true) },
+            resources: { app: dummy(id: 11) },
+            params: {}
+          )
         end
 
         it "is not allowed" do

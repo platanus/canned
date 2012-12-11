@@ -22,12 +22,12 @@ describe Canned::ControllerExt do
     class TestProfiles
       include Canned::Definition
 
-      profile :profile, upon: :user do
-        allow 'controller#action', upon(:user) { asks_for_same_id(:app_id) }
+      profile :profile do
+        allow 'controller#action', upon(:user) { asks_with_id(:app_id).equal_to(own: :app_id) }
       end
 
-      profile :profile2, upon: :user do
-        allow 'controller#action', upon(:user) { belongs_to(resource, as: :app) }
+      profile :profile2 do
+        allow 'controller#action', upon(:user) { belongs_to(:resource, as: :app) }
       end
     end
     TestProfiles

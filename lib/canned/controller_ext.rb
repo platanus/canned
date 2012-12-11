@@ -1,3 +1,5 @@
+require "canned/definition"
+
 module Canned
 
   ## Action Controller extension
@@ -44,12 +46,11 @@ module Canned
       # preload resources, retrieve resource proxy
       proxy = perform_resource_loading
 
-      # load test context and execute profile validation
-      ctx = Canned::TestContext.new proxy
+      # run profile validation
       result = _profiles.collect do |profile|
-        test_a = _definition.validate ctx, profile, controller_name
+        test_a = _definition.validate proxy, profile, controller_name
         return false if test_a == :forbidden
-        test_b = _definition.validate ctx, profile, "#{controller_name}##{action_name}" # TODO: keep this?
+        test_b = _definition.validate proxy, profile, "#{controller_name}##{action_name}" # TODO: keep this?
         return false if test_b == :forbidden
         test_a == :allowed or test_b == :allowed
       end
