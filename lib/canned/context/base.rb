@@ -1,3 +1,5 @@
+Dir[File.dirname(__FILE__) + '/matchers/*.rb'].each { |file| require file }
+
 module Canned
   module Context
     ## Base class for other context types

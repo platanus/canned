@@ -106,7 +106,7 @@ module Canned
 
     ## SHORT HAND METHODS
 
-    ## Same as calling when { the() ... }
+    ## Same as calling upon { the() ... }
     def upon(*_args, &_block)
       if _args.count == 0
         return _block

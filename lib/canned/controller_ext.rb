@@ -47,14 +47,14 @@ module Canned
       proxy = perform_resource_loading
 
       # run profile validation
-      result = _profiles.collect do |profile|
-        test_a = _definition.validate proxy, profile, controller_name
-        return false if test_a == :forbidden
-        test_b = _definition.validate proxy, profile, "#{controller_name}##{action_name}" # TODO: keep this?
-        return false if test_b == :forbidden
-        test_a == :allowed or test_b == :allowed
+      result = false
+      _profiles.each do |profile|
+        case _definition.validate proxy, profile, [controller_name, "#{controller_name}##{action_name}"]
+        when :forbidden then return false
+        when :allowed then result = true
+        end
       end
-      return result.any?
+      return result
     end
 
     ## Performs resource loading for current action
@@ -93,11 +93,7 @@ module Canned
           if is_restricted?
             profiles = Array(if _method.nil? then instance_eval(&_block) else send(_method) end)
             raise Canned::AuthError.new 'No profiles avaliable' if profiles.empty?
-            case perform_access_authorization(_definition, profiles)
-            when :forbidden; raise Canned::ForbiddenError.new
-            when :break; raise Canned::AuthError.new
-            when :default; raise Canned::AuthError.new
-            end
+            raise Canned::AuthError unless perform_access_authorization(_definition, profiles)
           else perform_resource_loading end
         end
       end

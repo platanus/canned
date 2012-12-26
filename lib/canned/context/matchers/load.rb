@@ -1,6 +1,3 @@
-require 'canned/context/matchers/helpers'
-require 'canned/context/resource'
-
 module Canned
   module Context
     module Matchers
@@ -17,7 +14,7 @@ module Canned
         def loaded(_name, _options={}, &_block)
           _chain_context(Canned::Context::Resource, _block) do |stack|
             res = @ctx.resources[_name]
-            break false if res.nil?
+            next false if res.nil?
             stack.push(:resource, _options.fetch(:as, _name), res)
           end
         end

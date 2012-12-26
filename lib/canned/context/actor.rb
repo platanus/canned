@@ -1,12 +1,3 @@
-require 'canned/context/base'
-require 'canned/context/matchers/where'
-require 'canned/context/matchers/has'
-require 'canned/context/matchers/is'
-require 'canned/context/matchers/that'
-require 'canned/context/matchers/asks_for'
-require 'canned/context/matchers/asks_with'
-require 'canned/context/matchers/load'
-
 module Canned
   module Context
 

@@ -9,8 +9,8 @@ module Canned
   #   context { a(:raffle) }
   #
   #   allow 'index', upon(:admin) { loads(:) where {  } } }
-  #   allow 'index', when { the(:user_id) { is } and a(:raffle).is }
-  #   allow 'show', when { is :is_allowed? and has() and a(:apron).has(:id).same_as(own: :id) asks_for(:) and owns(:raffle) } }
+  #   allow 'index', upon { the(:user_id) { is } and a(:raffle).is }
+  #   allow 'show', upon { is :is_allowed? and has() and a(:apron).has(:id).same_as(own: :id) asks_for(:) and owns(:raffle) } }
   # end
   #
   class Profile
@@ -23,7 +23,7 @@ module Canned
       @rules = []
     end
 
-    def validate(_base, _action)
+    def validate(_base, _actions)
 
       # TODO: optimize, do not process allow rules if already allowed.
 
@@ -34,11 +34,11 @@ module Canned
       @rules.each do |rule|
         case rule[:type]
         when :allow
-          if rule[:action].nil? or rule[:action] == _action
+          if rule[:action].nil? or _actions.include? rule[:action]
             return :allowed if rule[:proc].nil? or _base.instance_eval(&rule[:proc])
           end
         when :forbid
-          if rule[:action].nil? or rule[:action] == _action
+          if rule[:action].nil? or _actions.include? rule[:action]
             return :forbidden if rule[:proc].nil? or _base.instance_eval(&rule[:proc])
           end
         when :continue
@@ -46,11 +46,11 @@ module Canned
           return :break unless _base.instance_eval(&rule[:proc])
         when :expand
           # when evaluating an cross profile call, any special condition will cause to break.
-          result = rule[:profile].validate(_base, _action)
+          result = rule[:profile].validate(_base, _actions)
           return result if result != :default
         when :scope
           # when evaluating a child block, only break if a matching allow or forbid is found.
-          result = rule[:profile].validate(_base, _action)
+          result = rule[:profile].validate(_base, _actions)
           return result if result != :default and result != :break
         end
       end

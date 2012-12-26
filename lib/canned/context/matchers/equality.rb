@@ -1,5 +1,3 @@
-require 'canned/context/matchers/helpers'
-
 module Canned
   module Context
     module Matchers

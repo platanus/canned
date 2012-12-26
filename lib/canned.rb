@@ -1,6 +1,4 @@
 require "canned/version"
-
-require "canned/errors"
 require "canned/controller_ext"
 
 # Extend action controller

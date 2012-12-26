@@ -2,7 +2,15 @@ require "canned/errors"
 require "canned/stack"
 require "canned/profile"
 require "canned/profile_dsl"
+
+require "canned/context/base"
 require "canned/context/default"
+require "canned/context/actor"
+require "canned/context/resource"
+require "canned/context/value"
+require "canned/context/multi"
+
+Dir[File.dirname(__FILE__) + '/context/*.rb'].each { |file| require file }
 
 
 module Canned
@@ -58,13 +66,13 @@ module Canned
       #
       # @param [Canned2::TestContext] _ctx The test context to be used
       # @param [string] _acting_as The name of profile to be tested
-      # @param [String] _action The action to test
+      # @param [String|Array<String>] _actions The action or actions to test
       #
       def validate(_ctx, _acting_as, _action)
         profile = profiles[_acting_as.to_sym]
         raise Canned::SetupError.new "Profile not found '#{_acting_as}'" if profile.nil?
         _ctx = Canned::Context::Default.new(_ctx, tests, InmmutableStack.new)
-        profile.validate _ctx, _action
+        profile.validate _ctx, Array(_action)
       end
     end
   end

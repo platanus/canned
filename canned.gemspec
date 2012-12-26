@@ -1,20 +1,21 @@
 # -*- encoding: utf-8 -*-
-lib = File.expand_path('../lib', __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'canned/version'
+$:.push File.expand_path("../lib", __FILE__)
+require "canned/version"
 
-Gem::Specification.new do |gem|
-  gem.name          = "canned"
-  gem.version       = Canned::VERSION
-  gem.authors       = ["Ignacio Baixas"]
-  gem.email         = ["ignacio@platan.us"]
-  gem.description   = %q{Profile based authorization for ruby on rails}
-  gem.summary       = %q{Profile based authorization for ruby on rails, provides a simple DSL for specifying controller access restrictions, also considers resource loading and attribute accesibility}
-  gem.homepage      = "http://www.platan.us"
+Gem::Specification.new do |s|
+  s.name          = "canned"
+  s.version       = Canned::VERSION
+  s.authors       = ["Ignacio Baixas"]
+  s.email         = ["ignacio@platan.us"]
+  s.description   = %q{Profile based authorization for ruby on rails}
+  s.summary       = %q{Profile based authorization for ruby on rails, provides a simple DSL for specifying controller access restrictions, also considers resource loading and attribute accesibility}
+  s.homepage      = "http://www.platan.us"
 
-  gem.files         = Dir["{lib,spec}/**/*", "[A-Z]*", "init.rb"] - ["Gemfile.lock"]
-  gem.require_path  = "lib"
+  s.rubyforge_project = "canned"
 
-  gem.add_development_dependency "rails", "~> 3.2.2"
-  gem.add_development_dependency "rspec"
+  s.files         = Dir["{lib,spec}/**/*", "[A-Z]*"] - ["Gemfile.lock"]
+  s.require_paths = ["lib"]
+
+  s.add_development_dependency "rails", "~> 3.2.2"
+  s.add_development_dependency "rspec"
 end
