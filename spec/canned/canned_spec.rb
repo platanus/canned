@@ -15,6 +15,7 @@ describe Canned do
             allow 'rute1', upon { asks_with_same_id(:app_id) }
             allow 'rute2', upon { asks_for(:test) }
             forbid 'rute3', upon { not is(:is_admin) }
+            allow 'rute4', upon { has(:app_id) { less_than(20) } }
           end
         end
         TestProfiles
@@ -41,6 +42,10 @@ describe Canned do
         it "is forbidden if 'is' expression returns true" do
           definition.validate(context, :profile, 'rute3').should == :forbidden
         end
+
+        it "is forbidden if 'is' expression returns true" do
+          definition.validate(context, :profile, 'rute4').should == :allowed
+        end        
       end
     end
 
@@ -54,6 +59,10 @@ describe Canned do
             allow 'action1', upon(:user) { asks_with_same_id(:app_id) }
             allow 'action2', upon(:user) { belongs_to(:app, as: :app) }
             allow 'action3', upon(:user) { asks_with_same(:app_id) }
+            allow 'action4', upon(:user) { loads(:app).where { user.app_id == app.id } }
+            allow 'action5', upon { loads(:app).has(:id) { equal_to(10) } }
+            allow 'action6', upon(:user) { is(:is_admin) }
+            allow 'action7', upon { loads(:app).has(:id) { greater_than(10) } }
           end
         end
         TestProfiles
@@ -79,6 +88,22 @@ describe Canned do
 
         it "is not allowed if asks_for_same instead of asks_same_id" do
           definition.validate(context, :profile, 'action3').should == :default
+        end
+
+        it "is allowed where actor.resource_id equals to resource.id" do
+          definition.validate(context, :profile, 'action4').should == :allowed
+        end
+
+        it "is allowed if actor.resource_id equals to resource.id" do
+          definition.validate(context, :profile, 'action5').should == :allowed
+        end
+
+        it "is allowed if actor is admin" do
+          definition.validate(context, :profile, 'action6').should == :allowed
+        end
+
+        it "is allowed if actor is admin" do
+          definition.validate(context, :profile, 'action7').should == :default
         end
       end
 
